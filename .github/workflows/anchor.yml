@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Send anchor discipline prompt
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_1 }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           # Logging mode
           HOUR=$(date -u +"%H")
