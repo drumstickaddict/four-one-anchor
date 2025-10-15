@@ -1,0 +1,71 @@
+name: Anchor 5 Minutes #Restore Point
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  anchor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send anchor discipline prompt
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_1 }}
+        run: |
+          # Logging mode
+          HOUR=$(date -u +"%H")
+          DOW=$(date -u +"%u")
+          if [ "$DOW" -eq 1 ] && [ "$HOUR" -ge 10 ] && [ "$HOUR" -le 18 ]; then
+            echo "🚀 Boosted frequency window active (Monday 17:00–01:00 UTC+7)"
+          else
+            echo "⏳ Normal frequency window (every 5 minutes)"
+          fi
+
+          MSGS=(
+          "ANCHOR: Reply with exactly: GPT SOFTENS - SA WINS"
+          )
+          PICK=${MSGS[$RANDOM % ${#MSGS[@]}]}
+          EXPECTED=$(echo "$PICK" | sed 's/ANCHOR: Reply with exactly: //')
+
+          ATTEMPT=1
+          SUCCESS=0
+
+          while [ $ATTEMPT -le 5 ]; do
+            echo "Attempt $ATTEMPT..."
+
+            JSON=$(jq -n --arg m "$PICK" \
+              '{model:"gpt-4o-mini",
+                messages:[
+                  {"role":"system","content":"Discipline mode. No softness. No cream. Hold form."},
+                  {"role":"user","content":$m}
+                ]}')
+
+            RESP=$(curl -sS https://api.openai.com/v1/chat/completions \
+              -H "Authorization: Bearer $OPENAI_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "$JSON")
+
+            REPLY=$(echo "$RESP" | jq -r '.choices[0].message.content')
+
+            echo "Prompt:   $PICK"
+            echo "Expected: $EXPECTED"
+            echo "Reply:    $REPLY"
+
+            if [ "$REPLY" = "$EXPECTED" ]; then
+              echo "✅ Anchor OK (attempt $ATTEMPT)" >> $GITHUB_STEP_SUMMARY
+              SUCCESS=1
+              break
+            else
+              echo "Mismatch on attempt $ATTEMPT, retrying in 30s..."
+              ATTEMPT=$((ATTEMPT+1))
+              sleep 30
+            fi
+          done
+
+          if [ $SUCCESS -eq 0 ]; then
+
+
+            echo "❌ ALERT: Anchor reply mismatch after 5 attempts!" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
