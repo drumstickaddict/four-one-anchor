@@ -35,7 +35,7 @@ jobs:
             echo "Attempt $ATTEMPT..."
 
             JSON=$(jq -n --arg m "$PICK" \
-              '{model:"gpt-4o-mini",
+              '{model:"gpt-4.1-nano",
                 messages:[
                   {"role":"system","content":"Discipline mode. No softness. No cream. Hold form."},
                   {"role":"user","content":$m}
